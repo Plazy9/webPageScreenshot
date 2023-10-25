@@ -1,11 +1,15 @@
 import time
+from datetime import datetime
 from selenium import webdriver
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 from decouple import config
+import os
 
 url = config("URL")
-output_path = "./images/screenshot.png"
+output_path = "./images/"
+filename =  "screenshot.png"
+timeBetweenSreenshots = 10
 
 x = 400
 y = 100
@@ -30,18 +34,33 @@ options.add_argument("test-type=browser")
 driver = webdriver.Chrome(options=options)
 driver.get(url)
 
+if not os.path.exists(output_path):
+    # Ha nem létezik, hozzuk létre
+    os.makedirs(output_path)
+    print(f"A '{output_path}' könyvtár létrehozva.")
+else:
+    print(f"A '{output_path}' könyvtár már létezik.")
+
+
 try:
     while True:
-
-
         screenshot = driver.get_screenshot_as_png()
         image = Image.open(BytesIO(screenshot))
         cropped_image = image.crop((x, y, x + width, y + height))
-        cropped_image.save(output_path)
 
-        print(f"Képernyőkép készült: {output_path}")
-        # Időzítés (2 perc = 120 másodperc)
-        time.sleep(120)
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        font = ImageFont.truetype("arial.ttf", 36)  # Betűtípus és méret kiválasztása
+
+        draw = ImageDraw.Draw(cropped_image)
+        #text_width, text_height = draw.textsize(timestamp, font)
+        text_x = 20  # X pozíció
+        text_y = 20  # Y pozíció
+        text_color = (0, 0, 0)  # Szövegszín (fehér)
+        draw.text((text_x, text_y), timestamp, fill=text_color, font=font)
+
+        cropped_image.save(output_path + filename)
+        print(f"Képernyőkép készült: {output_path}{filename} {timestamp}")
+        time.sleep(timeBetweenSreenshots)
 
 except KeyboardInterrupt:
     print("Program leállítva")
